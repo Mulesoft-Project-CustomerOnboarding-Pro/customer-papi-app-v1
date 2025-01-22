@@ -1,0 +1,15 @@
+http.listener.host: "0.0.0.0"
+http.listener.port: "8083"
+http.listener.readtimeout: "30000"
+
+http.requester.sapi.customer.host: "0.0.0.0"
+http.requester.sapi.customer.port: "8082"
+http.requester.sapi.customer.registration.path: "/api/customers"
+
+http.requester.sapi.common.host: "0.0.0.0"
+http.requester.sapi.common.port: "8081"
+http.requester.sapi.common.notification.path: "/api/notifications"
+
+sfdc.username: "![SXJgsguRZjEvxKP3deKKFrdgSLcXqN4ym1KLxsA+OQk=]"
+sfdc.password: "![iKd12Zp2ENrg+SIxwV9auw==]"
+sfdc.securityToken: "![SsqVYrechFCAuunn1uOw40Ub9sGELvbMn9+q6hAm8Ec=]"

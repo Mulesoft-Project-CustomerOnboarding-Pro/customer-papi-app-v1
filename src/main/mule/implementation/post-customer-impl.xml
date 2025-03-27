@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<sub-flow name="post-customer-implSub_Flow" doc:id="210bd540-191e-4103-af93-1e22c3fafb04">
+		<flow-ref doc:name="Flow Reference to call Registration-sapi-Sub-Flow" doc:id="778c2ea3-5fc9-4431-a017-629662638115" name="call-Registration-sapi-Sub-Flow" />
+		<flow-ref doc:name="Flow Reference to call-Notification-sapi-Sub-Flow" doc:id="7cbf7f5b-4665-449e-b67b-b2c24e8c0150" name="call-Notification-sapi-Sub-Flow" />
+		<ee:transform doc:name="Transform Message" doc:id="fc025a2c-79ef-4831-9274-768cc363d8e3">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+		"eventInstanceId" : vars.requestData.headers.'x-cms-transactionid',
+		"status" : "Success"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+	<sub-flow name="call-Registration-sapi-Sub-Flow" doc:id="a2f77ea6-056e-49df-a379-0caec7c6d3a5">
+		<ee:transform doc:name="Transform Message" doc:id="2f40e905-85b0-48ab-a184-c9bbeacae0fe">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+vars.requestData.payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="9f950b0e-bdab-49b1-ba4f-ee628552c59b" message="#[%dw 2.0 &#10;&#10;output application/json indent = false &#10;--- &#10;{ 	&#10;    TimeStamp: vars.startTime, &#10;    transactionId: vars.headers.'x-cms-transactionid:',&#10;    AppName: app.name, 	&#10;    FlowName: flow.name, 	&#10;    BusinessProcessName:  &quot;call from process to system&quot;, 	&#10;    Category:  &quot;Customer&quot;, 	&#10;    OriginatingApplication:  &quot;Process API&quot;, 	&#10;    DesinationApplication:  &quot;CUSTOMER SAPI&quot;, 	&#10;    CustomerId: &quot;NA&quot;, 	&#10;    txnState:  &quot;START &quot; &#10;}]" />
+		<http:request method="POST" doc:name="Request" doc:id="26fafc99-5517-49e9-aec0-6a8f7e893e17" config-ref="HTTP_Request_Configuration_CustomerSAPI" path="${http.requester.sapi.customer.registration.path}" responseTimeout="${http.response.timeout}">
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	"clientSecret" : Mule::p("sapi.clientSecret"),
+	"x-cms-transactionId" : vars.requestData.headers.'x-cms-transactionid',
+	"clientId" : Mule::p("sapi.clientId"),
+	"accept" : "application/json"
+}]]]></http:headers>
+		</http:request>
+		<logger level="INFO" doc:name="Logger" doc:id="53dd7c63-f116-493d-8a59-9d590b400f66" message="#[%dw 2.0 &#10;&#10;output application/json indent = false &#10;--- &#10;{ 	&#10;    TimeStamp: (now() &gt;&gt; &quot;UTC&quot;)  as String {format: &quot;yyyy-MM-dd:hh-mm-ss&quot;}, &#10;    transactionId: vars.headers.'x-cms-transactionId:',&#10;    AppName: app.name, 	&#10;    FlowName: flow.name, 	&#10;    BusinessProcessName:  &quot;Customer Registration&quot;, 	&#10;    Category:  &quot;Customer&quot;, 	&#10;    OriginatingApplication:  &quot;Process API&quot;, 	&#10;    DesinationApplication:  &quot;CUSTOMER SAPI&quot;, 	&#10;    CustomerId: &quot;NA&quot;, 	&#10;    txnState:  &quot;END&quot; &#10;}]"/>
+	</sub-flow>
+	<sub-flow name="call-Notification-sapi-Sub-Flow" doc:id="ff0a6c1f-5e40-4837-8fe2-55151bf4b6e0" >
+		<ee:transform doc:name="Transform Message" doc:id="cde077b3-e134-4117-8420-0c1e6e08b94b">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	
+	"firstName": vars.requestData.payload.contact.firstName,
+	"lastName" : vars.requestData.payload.contact.lastName,
+	"contactType" : vars.requestData.payload.contact.contactType,
+	"countryCode" : vars.requestData.payload.contact.countryCode,
+	"mobile" : vars.requestData.payload.contact.mobile,
+	"email" : vars.requestData.payload.contact.email	
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="f518fcae-75fa-4bc0-9899-680e54adea13" message="#[%dw 2.0&#10;output application/json&#10;---&#10;{ 	&#10;    TimeStamp: vars.startTime, &#10;    transactionId: vars.headers.'x-cms-transactionId:',&#10;    AppName: app.name, 	&#10;    FlowName: flow.name, 	&#10;    BusinessProcessName:  &quot;call from process to system&quot;, 	&#10;    Category:  &quot;Customer&quot;, 	&#10;    OriginatingApplication:  &quot;Process API&quot;, 	&#10;    DesinationApplication:  &quot;NOTIFICATION SAPI&quot;, 	&#10;    CustomerId: &quot;NA&quot;, 	&#10;    txnState:  &quot;START &quot; &#10;}]"/>
+		<http:request method="POST" doc:name="Request" doc:id="ccd30db3-785f-4e5d-8343-a4157d8b945a" config-ref="HTTP_Request_configuration_CommonSAPI" path="${http.requester.sapi.common.notification.path}" responseTimeout="${http.response.timeout}">
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	"clientSecret" : Mule::p("sapi.clientSecret"),
+	"x-cms-transactionId" : vars.requestData.headers.'x-cms-transactionid',
+	"clientId" : Mule::p("sapi.clientId"),
+	"accept" : "application/json"
+}]]]></http:headers>
+		</http:request>
+		<logger level="INFO" doc:name="Logger" doc:id="8f47ffb5-3c38-4a8d-97f0-66822b167d07" message="#[%dw 2.0 &#10;&#10;output application/json indent = false &#10;--- &#10;{ 	&#10;    TimeStamp: (now() &gt;&gt; &quot;UTC&quot;)  as String {format: &quot;yyyy-MM-dd:hh-mm-ss&quot;}, &#10;    transactionId: vars.headers.'x-cms-transactionId:',&#10;    AppName: app.name, 	&#10;    FlowName: flow.name, 	&#10;    BusinessProcessName:  &quot;Customer Registration&quot;, 	&#10;    Category:  &quot;Customer&quot;, 	&#10;    OriginatingApplication:  &quot;Process API&quot;, 	&#10;    DesinationApplication:  &quot;NOTIFICATION SAPI&quot;, 	&#10;    CustomerId: &quot;NA&quot;, 	&#10;    txnState:  &quot;END&quot; &#10;}]"/>
+	</sub-flow>
+</mule>
